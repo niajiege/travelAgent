@@ -2,9 +2,12 @@
 
 这是一个基于多 Agent 协作的智能旅行规划系统，演示了现代 AI Agent 架构和设计模式。
 
-## Notice1: 使用时记得填写自己的Api Key.
-- src\tools\index.ts 中 qweatherApiKey 变量(和风天气)
-- src\lib\fetcher.ts 中 apiKey 变量(阿里云OpenAI)
+## Notice1: 使用前需要配置两个 API Key
+- `src/lib/fetcher.ts` 中的 `apiKey`：当前模型服务使用 DeepSeek 官方 API。
+- `src/tools/index.ts` 中的 `qweatherApiKey`：和风天气 API Key，留空会导致天气查询认证失败。
+- 核对 `vite.config.ts` 中 `/qweatherapi` 的 `target` 是否为该和风天气凭证对应的 API Host，并确认账号可使用代码中的 `30d` 天气接口。
+
+当前项目在浏览器中直接发起请求，Key 会暴露给网页访问者。请勿把真实 Key 提交到 Git；对外部署前应改由服务端保存和使用密钥。
 
 
 ## Notice2: 本项目为[《前端视角下认识AI Agent》](https://juejin.cn/post/7522476555774066703#comment)配套的演示项目, 代码或文档中均存在不完善之处, 请谅解.
@@ -42,6 +45,10 @@
 cd travel-agent-ui
 pnpm install
 \`\`\`
+
+### 配置 API Key
+
+按下方“配置说明”分别配置模型服务和和风天气。两个服务使用不同的 Key；天气 Key 为空时，旅行规划会在天气阶段失败。
 
 ### 启动开发服务器
 \`\`\`bash
@@ -133,24 +140,30 @@ const memories = await MemoryManager.getRecentMemories()
 ## 🔧 配置说明
 
 ### API 配置
-在 \`src/lib/fetcher.ts\` 中配置阿里云 OpenAI 兼容接口：
-\`\`\`typescript
+在 `src/lib/fetcher.ts` 中配置模型服务的 Key、Base URL 和模型 ID。当前代码使用 DeepSeek 官方接口及 `deepseek-chat`；更换服务时这三项需要对应同一服务。
+
+在 `src/tools/index.ts` 中填写和风天气的 `qweatherApiKey`：
+
+```typescript
+const qweatherApiKey = 'your-qweather-api-key'
+```
+
+在 `vite.config.ts` 中确认 `/qweatherapi` 的代理 `target` 是和风天气控制台分配给该凭证的 API Host。当前天气工具调用 `/geo/v2/city/lookup` 和 `/v7/weather/30d`；请确认账号具有相应接口权限。若返回 `401 Unauthorized`，先检查 Key 与 API Host 是否匹配。
+
+模型客户端配置示例：
+```typescript
 const client = new OpenAI({
-  apiKey: 'your-api-key',
-  baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+  apiKey: 'your-deepseek-api-key',
+  baseURL: 'https://api.deepseek.com',
   dangerouslyAllowBrowser: true
 })
-\`\`\`
+```
 
 ### 模型配置
-默认使用 \`qwen-turbo\` 模型，可以在各Agent中调整：
-\`\`\`typescript
-const response = await chatCompletion({
-  model: 'qwen-turbo',  // 可选：qwen-plus, qwen-max
-  messages: [...],
-  temperature: 0.7
-})
-\`\`\`
+当前默认使用 `deepseek-chat`，模型名在 `src/lib/fetcher.ts` 的 `modelParams` 中配置。更换模型前请确认对应 API 支持聊天和工具调用。
+```typescript
+const modelParams = { model: 'deepseek-chat' }
+```
 
 ## 📚 技术细节
 
@@ -203,4 +216,4 @@ MIT License
 
 ---
 
-**🎯 项目目标**：演示现代 AI Agent 系统的设计和实现，展示多Agent协作、认知架构、工具使用等核心概念。 
+**🎯 项目目标**：演示现代 AI Agent 系统的设计和实现，展示多Agent协作、认知架构、工具使用等核心概念。
